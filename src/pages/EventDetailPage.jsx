@@ -67,13 +67,43 @@ const EventDetailPage = () => {
   const handleRegister = async () => {
     setRegLoading(true);
     setError("");
-    const { error } = await supabase.from("registrations").insert({
+
+    // Start a transaction to ensure both operations succeed or fail together
+    const { error: regError } = await supabase.from("registrations").insert({
       event_id: id,
       user_id: user.id,
       status: "confirmed",
     });
-    if (error) setError(error.message);
-    else setRegistered(true);
+
+    if (regError) {
+      setError(regError.message);
+      setRegLoading(false);
+      return;
+    }
+
+    // Update the event's attendee count
+    const { error: updateError } = await supabase
+      .from("events")
+      .update({ current_attendees: event.current_attendees + 1 })
+      .eq("id", id);
+
+    if (updateError) {
+      setError(updateError.message);
+      // If update fails, we should rollback the registration
+      await supabase
+        .from("registrations")
+        .delete()
+        .eq("event_id", id)
+        .eq("user_id", user.id);
+    } else {
+      setRegistered(true);
+      // Update the local event state
+      setEvent((prev) => ({
+        ...prev,
+        current_attendees: prev.current_attendees + 1,
+      }));
+    }
+
     setRegLoading(false);
   };
 
