@@ -1,3 +1,54 @@
+-- Insert sample users into auth.users
+INSERT INTO auth.users (
+    id,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    created_at,
+    updated_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    is_super_admin,
+    role
+)
+VALUES 
+    (
+        '00000000-0000-0000-0000-000000000001',
+        'john@example.com',
+        crypt('password123', gen_salt('bf')),
+        NOW(),
+        NOW(),
+        NOW(),
+        '{"provider":"email","providers":["email"]}',
+        '{"name":"John Doe"}',
+        false,
+        'authenticated'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000002',
+        'jane@example.com',
+        crypt('password123', gen_salt('bf')),
+        NOW(),
+        NOW(),
+        NOW(),
+        '{"provider":"email","providers":["email"]}',
+        '{"name":"Jane Smith"}',
+        false,
+        'authenticated'
+    ),
+    (
+        '00000000-0000-0000-0000-000000000003',
+        'bob@example.com',
+        crypt('password123', gen_salt('bf')),
+        NOW(),
+        NOW(),
+        NOW(),
+        '{"provider":"email","providers":["email"]}',
+        '{"name":"Bob Wilson"}',
+        false,
+        'authenticated'
+    );
+
 -- Insert sample profiles
 INSERT INTO profiles (id, full_name, avatar_url)
 VALUES 
