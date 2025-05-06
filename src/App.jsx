@@ -4,6 +4,8 @@ import MainLayout from "./components/layout/MainLayout";
 import HomePage from "./pages/HomePage";
 import EventsPage from "./pages/EventsPage";
 import LoginPage from "./pages/LoginPage";
+import SignUpPage from "./pages/SignUpPage";
+import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 
@@ -19,11 +21,12 @@ function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignUpPage />} />
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <div>Dashboard Page (Coming Soon)</div>
+                    <DashboardPage />
                   </ProtectedRoute>
                 }
               />
