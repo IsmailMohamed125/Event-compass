@@ -5,7 +5,7 @@ import FilterBar from "../components/events/FilterBar";
 import EventCard from "../components/events/EventCard";
 import Pagination from "../components/events/Pagination";
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 8;
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -13,6 +13,7 @@ const EventsPage = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [category, setCategory] = useState("");
   const [filters, setFilters] = useState({
     dateRange: "all",
     priceRange: "all",
@@ -25,7 +26,7 @@ const EventsPage = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [events, searchTerm, filters]);
+  }, [events, searchTerm, filters, category]);
 
   const fetchEvents = async () => {
     try {
@@ -58,19 +59,26 @@ const EventsPage = () => {
       );
     }
 
+    // Apply category filter
+    if (category) {
+      filtered = filtered.filter((event) => event.category === category);
+    }
+
     // Apply date range filter
     if (filters.dateRange !== "all") {
       const now = new Date();
+      let weekAgo = new Date();
+      weekAgo.setDate(now.getDate() - 7);
+      let monthAgo = new Date();
+      monthAgo.setMonth(now.getMonth() - 1);
       filtered = filtered.filter((event) => {
         const eventDate = new Date(event.date);
         switch (filters.dateRange) {
           case "today":
             return eventDate.toDateString() === now.toDateString();
           case "week":
-            const weekAgo = new Date(now.setDate(now.getDate() - 7));
             return eventDate >= weekAgo;
           case "month":
-            const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
             return eventDate >= monthAgo;
           default:
             return true;
@@ -111,6 +119,10 @@ const EventsPage = () => {
     setSearchTerm(term);
   };
 
+  const handleCategoryChange = (cat) => {
+    setCategory(cat);
+  };
+
   const handleFilter = (newFilters) => {
     setFilters(newFilters);
   };
@@ -133,9 +145,12 @@ const EventsPage = () => {
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Events</h1>
 
         {/* Search and Filter Section */}
-        <div className="mb-8 space-y-4">
-          <SearchBar onSearch={handleSearch} />
-          <FilterBar onFilter={handleFilter} />
+        <div className="mb-8 flex flex-col gap-4">
+          <SearchBar
+            onSearch={handleSearch}
+            onCategoryChange={handleCategoryChange}
+          />
+          {/* <FilterBar onFilter={handleFilter} /> */}
         </div>
 
         {/* Events Grid */}
@@ -155,7 +170,7 @@ const EventsPage = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedEvents.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}

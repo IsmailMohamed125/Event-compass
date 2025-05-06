@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 
 const SignUpPage = () => {
   const [email, setEmail] = useState("");
@@ -118,6 +119,12 @@ const SignUpPage = () => {
             </button>
           </div>
         </form>
+        <div className="flex items-center my-4">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="mx-2 text-gray-400 text-sm">or</span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+        <GoogleSignInButton onError={setError} />
       </div>
     </div>
   );

@@ -39,7 +39,8 @@ const HomePage = () => {
               Discover Amazing Events
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              Find and join the most exciting events in your area. From tech conferences to art exhibitions, we have got you covered.
+              Find and join the most exciting events in your area. From tech
+              conferences to art exhibitions, we have got you covered.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
@@ -223,7 +224,8 @@ const HomePage = () => {
             Ready to Join Amazing Events?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Create an account now and start discovering events that match your interests.
+            Create an account now and start discovering events that match your
+            interests.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

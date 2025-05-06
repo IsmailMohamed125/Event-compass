@@ -9,8 +9,8 @@ const SearchBar = ({ onSearch }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
-      <div className="relative">
+    <form onSubmit={handleSubmit} className="w-full flex gap-4 mb-4">
+      <div className="relative flex-1">
         <input
           type="text"
           value={searchTerm}
