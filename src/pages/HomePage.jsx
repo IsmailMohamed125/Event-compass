@@ -1,36 +1,74 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const HomePage = () => {
   const [featuredEvents, setFeaturedEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchFeaturedEvents();
-  }, []);
+  const fetchFeaturedEvents = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-  const fetchFeaturedEvents = async () => {
     try {
+
+      const cacheBuster = new Date().getTime();
+
       const { data, error } = await supabase
         .from("events")
         .select("*")
         .eq("status", "active")
         .order("date", { ascending: true })
-        .limit(3);
+        .limit(3)
+        .abortSignal(`featured-events-${cacheBuster}`);
 
       if (error) throw error;
+
       setFeaturedEvents(data || []);
     } catch (error) {
       console.error("Error fetching events:", error);
+      setError("Failed to load featured events");
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    
+    const timer = setTimeout(() => {
+      fetchFeaturedEvents();
+    }, 50);
+
+    return () => {
+      clearTimeout(timer);
+
+      const abortController = new AbortController();
+      abortController.abort();
+    };
+  }, [fetchFeaturedEvents]);
+
+  const handleRetry = () => {
+    fetchFeaturedEvents();
+  };
+
+  const formatEventDate = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    } catch (e) {
+      return "Date unavailable";
     }
   };
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
+
       <section className="relative bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
         <div className="absolute inset-0 bg-black opacity-50"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32">
@@ -60,39 +98,82 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Featured Events Section */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
-            Featured Events
-          </h2>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">
+              Featured Events
+            </h2>
+            {!loading && !error && (
+              <Link
+                to="/events"
+                className="text-purple-600 hover:text-purple-800 font-medium"
+              >
+                View All Events →
+              </Link>
+            )}
+          </div>
+
           {loading ? (
-            <div className="flex justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+            <div className="flex flex-col items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+              <p className="text-gray-600">Loading featured events...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12 bg-red-50 rounded-lg">
+              <h3 className="text-lg font-medium text-red-800 mb-2">{error}</h3>
+              <button
+                onClick={handleRetry}
+                className="mt-4 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : featuredEvents.length === 0 ? (
+            <div className="text-center py-12 bg-gray-100 rounded-lg">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No events found
+              </h3>
+              <p className="text-gray-600">
+                Check back soon for upcoming events!
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredEvents.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300"
+                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition duration-300 h-full flex flex-col"
                 >
-                  <div className="relative h-48">
-                    <img
-                      src={event.image_url}
-                      alt={event.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative h-48 overflow-hidden">
+                    {event.image_url ? (
+                      <img
+                        src={event.image_url}
+                        alt={event.name}
+                        className="w-full h-full object-cover transform hover:scale-105 transition duration-500"
+                        loading="lazy" 
+                        onError={(e) => {
+                          e.target.src =
+                            "https://via.placeholder.com/400x200?text=Event"; 
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500">
+                          No image available
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute top-4 right-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm">
-                      ${event.price}
+                      ${event.price ?? 0}
                     </div>
                   </div>
-                  <div className="p-6">
+                  <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {event.name}
+                      {event.name || "Untitled Event"}
                     </h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">
-                      {event.description}
+                    <p className="text-gray-600 mb-4 line-clamp-2 flex-1">
+                      {event.description || "No description available"}
                     </p>
                     <div className="flex items-center text-gray-500 mb-4">
                       <svg
@@ -108,7 +189,7 @@ const HomePage = () => {
                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                         />
                       </svg>
-                      {new Date(event.date).toLocaleDateString()}
+                      {event.date ? formatEventDate(event.date) : "Date TBA"}
                     </div>
                     <div className="flex items-center text-gray-500 mb-4">
                       <svg
@@ -130,7 +211,7 @@ const HomePage = () => {
                           d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                         />
                       </svg>
-                      {event.location}
+                      {event.location || "Location TBA"}
                     </div>
                     <Link
                       to={`/events/${event.id}`}
@@ -146,11 +227,10 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   className="w-8 h-8 text-purple-600"
@@ -171,7 +251,7 @@ const HomePage = () => {
                 Simple and quick registration process for all events
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   className="w-8 h-8 text-purple-600"
@@ -192,7 +272,7 @@ const HomePage = () => {
                 Connect with like-minded people and expand your network
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-6 bg-white rounded-lg shadow-sm hover:shadow-md transition">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
                   className="w-8 h-8 text-purple-600"
@@ -217,7 +297,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="bg-purple-600 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold mb-4">

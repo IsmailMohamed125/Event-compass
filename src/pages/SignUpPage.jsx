@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 import GoogleSignInButton from "../components/auth/GoogleSignInButton";
 
 const SignUpPage = () => {
@@ -11,6 +12,19 @@ const SignUpPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp } = useAuth();
+
+  const createProfile = async (userId) => {
+    const { error } = await supabase.from("profiles").upsert({
+      id: userId,
+      full_name: email.split("@")[0],
+      avatar_url: null,
+      role: "user",
+    });
+
+    if (error) {
+      console.error("Failed to create initial profile:", error);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,8 +37,15 @@ const SignUpPage = () => {
     try {
       setError(null);
       setLoading(true);
-      const { error } = await signUp({ email, password });
+
+      const { data, error } = await signUp({ email, password });
+
       if (error) throw error;
+
+      if (data?.user?.id) {
+        await createProfile(data.user.id);
+      }
+
       navigate("/login", {
         state: { message: "Please check your email to confirm your account" },
       });

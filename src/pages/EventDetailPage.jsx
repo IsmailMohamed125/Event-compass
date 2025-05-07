@@ -5,7 +5,6 @@ import { useAuth } from "../context/AuthContext";
 
 const getGoogleCalendarUrl = (event) => {
   const start = new Date(event.date).toISOString().replace(/-|:|\.\d\d\d/g, "");
-  // Assume 2 hours duration for demo
   const end = new Date(new Date(event.date).getTime() + 2 * 60 * 60 * 1000)
     .toISOString()
     .replace(/-|:|\.\d\d\d/g, "");
@@ -68,7 +67,6 @@ const EventDetailPage = () => {
     setRegLoading(true);
     setError("");
 
-    // Start a transaction to ensure both operations succeed or fail together
     const { error: regError } = await supabase.from("registrations").insert({
       event_id: id,
       user_id: user.id,
@@ -81,7 +79,6 @@ const EventDetailPage = () => {
       return;
     }
 
-    // Update the event's attendee count
     const { error: updateError } = await supabase
       .from("events")
       .update({ current_attendees: event.current_attendees + 1 })
@@ -89,7 +86,6 @@ const EventDetailPage = () => {
 
     if (updateError) {
       setError(updateError.message);
-      // If update fails, we should rollback the registration
       await supabase
         .from("registrations")
         .delete()
@@ -97,7 +93,6 @@ const EventDetailPage = () => {
         .eq("user_id", user.id);
     } else {
       setRegistered(true);
-      // Update the local event state
       setEvent((prev) => ({
         ...prev,
         current_attendees: prev.current_attendees + 1,
